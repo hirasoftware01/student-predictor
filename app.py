@@ -87,7 +87,7 @@ def train_model():
 model, scaler = train_model()
 
 # ── UI ──────────────────────────────────────────────────────────
-st.markdown("# 🎓 Student Grade Predictor")
+st.markdown("# 🎓 Student Grade Predictor ✨")
 st.markdown("Fill in your details below to predict your grade outcome!")
 st.markdown("---")
 
@@ -95,50 +95,50 @@ col1, col2 = st.columns(2)
 
 with col1:
     study_hours = st.selectbox(
-        "📚 Study Hours Per Week",
+        "Study Hours Per Week",
         [f"{i} hrs" for i in range(0, 41, 2)],
         index=10
     )
 
     attendance = st.selectbox(
-        "🏫 Attendance Rate",
+        "Attendance Rate",
         [f"{i}%" for i in range(50, 101, 5)],
         index=6
     )
 
     sleep_hours = st.selectbox(
-        "😴 Sleep Hours Per Night",
+        "Sleep Hours Per Night",
         [f"{i} hrs" for i in range(4, 11)],
         index=3
     )
 
     prev_score = st.selectbox(
-        "📊 Previous Academic Score",
+        "Previous Academic Score",
         [f"{i}" for i in range(40, 101, 5)],
         index=6
     )
 
 with col2:
     motivation = st.selectbox(
-        "💪 Motivation Level",
+        "Motivation Level",
         ["Low", "Medium", "High"],
         index=1
     )
 
     internet = st.selectbox(
-        "🌐 Internet Access at Home",
+        "Internet Access at Home",
         ["No", "Yes"],
         index=1
     )
 
     learning_style = st.selectbox(
-        "🧠 Learning Style",
+        "Learning Style",
         ["Visual", "Auditory", "Reading/Writing", "Kinesthetic"],
         index=0
     )
 
     extra = st.selectbox(
-        "⚽ Extracurricular Activities",
+        "Extracurricular Activities",
         ["No", "Yes"],
         index=0
     )
