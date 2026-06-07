@@ -96,7 +96,7 @@ model, scaler = train_model()
 
 # ── UI ──────────────────────────────────────────────────────────
 st.markdown("# 🎓 Student Grade Predictor")
-st.markdown("Fill in your details below to predict your grade outcome!")
+st.markdown("Fill in your details below to predict your outcome!")
 st.markdown("---")
 
 col1, col2 = st.columns(2)
@@ -166,10 +166,10 @@ if st.button("🔮 Predict My Grade!"):
     confidence = round(max(proba) * 100, 1)
 
     grade_info = {
-        'Excellent'    : ("🏆 Excellent!", "Outstanding! You are performing at the highest level.", "result-excellent"),
-        'Good'         : ("👍 Good!",       "Great job! You are performing well above average.",    "result-good"),
-        'Average'      : ("📈 Average",     "You are doing okay, but there is room to improve.",   "result-average"),
-        'Below Average': ("⚠️ Below Average","You need to work harder to improve your performance.", "result-below"),
+        'Excellent'    : ("🏆 Excellent!You PASSED", "Outstanding! You are performing at the highest level.", "result-excellent"),
+        'Good'         : ("👍 Good! You PASSED",       "Great job! You are performing well above average.",    "result-good"),
+        'Average'      : ("📈 Average You PASSED",     "You are doing okay, but there is room to improve.",   "result-average"),
+        'Below Average': ("⚠️ Below Average You Failed","You need to work harder to improve your performance.", "result-below"),
     }
     emoji, msg, css = grade_info[prediction]
 
