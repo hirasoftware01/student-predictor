@@ -87,7 +87,7 @@ def train_model():
 model, scaler = train_model()
 
 # ── UI ──────────────────────────────────────────────────────────
-st.markdown("# 🎓 Student Grade Predictor ✨")
+st.markdown("# 🎓 Student Grade Predictor")
 st.markdown("Fill in your details below to predict your grade outcome!")
 st.markdown("---")
 
