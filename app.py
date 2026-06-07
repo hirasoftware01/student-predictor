@@ -5,7 +5,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 
 st.set_page_config(page_title="Student Grade Predictor", page_icon="🎓", layout="centered")
 
@@ -24,141 +24,157 @@ st.markdown("""
     width: 100%;
     margin-top: 1rem;
 }
+.result-pass { background: #d4edda; border: 2px solid #28a745; color: #155724; }
+.result-average { background: #fff3cd; border: 2px solid #ffc107; color: #856404; }
+.result-fail { background: #f8d7da; border: 2px solid #dc3545; color: #721c24; }
 .result-box {
     text-align: center;
     padding: 2rem;
     border-radius: 20px;
     margin-top: 1.5rem;
 }
-.grade-A { background: #d4edda; border: 2px solid #28a745; color: #155724; }
-.grade-B { background: #cce5ff; border: 2px solid #007bff; color: #004085; }
-.grade-C { background: #fff3cd; border: 2px solid #ffc107; color: #856404; }
-.grade-D { background: #f8d7da; border: 2px solid #dc3545; color: #721c24; }
 </style>
 """, unsafe_allow_html=True)
 
 @st.cache_resource
 def train_model():
     np.random.seed(42)
-    n = 2000
-    study   = np.random.uniform(0, 10, n)
-    attend  = np.random.uniform(50, 100, n)
-    gpa     = np.random.uniform(1.0, 4.0, n)
-    sleep   = np.random.uniform(4, 10, n)
-    part    = np.random.randint(0, 2, n)
-    extra   = np.random.randint(0, 2, n)
-    internet= np.random.randint(0, 2, n)
-    style   = np.random.randint(0, 3, n)
+    n = 3000
 
-    score = (study*8 + (attend-50)*0.5 + gpa*15 +
-             sleep*1.5 - part*5 + extra*3 + internet*2)
-    score += np.random.normal(0, 10, n)
+    study       = np.random.uniform(0, 40, n)        # hours per week
+    attend      = np.random.uniform(50, 100, n)       # percentage
+    sleep       = np.random.uniform(4, 10, n)         # hours per night
+    motivation  = np.random.randint(0, 3, n)          # 0=Low 1=Medium 2=High
+    internet    = np.random.randint(0, 2, n)          # 0=No 1=Yes
+    style       = np.random.randint(0, 4, n)          # 0=Visual 1=Auditory 2=Reading 3=Kinesthetic
+    prev_score  = np.random.uniform(40, 100, n)       # previous academic score
+    extra       = np.random.randint(0, 2, n)          # 0=No 1=Yes
 
-    grade = pd.cut(score, bins=4, labels=['D','C','B','A'])
+    score = (study * 1.5 +
+             (attend - 50) * 0.8 +
+             sleep * 1.2 +
+             motivation * 10 +
+             internet * 3 +
+             prev_score * 0.5 +
+             extra * 4)
+    score += np.random.normal(0, 12, n)
+
+    # Pass / Average / Fail
+    grade = pd.cut(score, bins=3, labels=['Fail', 'Average', 'Pass'])
 
     df = pd.DataFrame({
-        'Study_Hours': study, 'Attendance': attend, 'GPA': gpa,
-        'Sleep_Hours': sleep, 'Part_Time': part, 'Extracurricular': extra,
-        'Internet': internet, 'Learning_Style': style, 'Grade': grade
+        'Study_Hours_Per_Week'   : study,
+        'Attendance_Rate'        : attend,
+        'Sleep_Hours_Per_Night'  : sleep,
+        'Motivation_Level'       : motivation,
+        'Internet_Access'        : internet,
+        'Learning_Style'         : style,
+        'Previous_Academic_Score': prev_score,
+        'Extracurricular'        : extra,
+        'Grade'                  : grade
     }).dropna()
 
     X = df.drop('Grade', axis=1)
     y = df['Grade']
+
     scaler = MinMaxScaler()
     X_scaled = scaler.fit_transform(X)
-    model = RandomForestClassifier(n_estimators=200, random_state=42)
+
+    model = RandomForestClassifier(n_estimators=300, random_state=42)
     model.fit(X_scaled, y)
     return model, scaler
 
 model, scaler = train_model()
 
-# ── UI ──────────────────────────────────────────────────────────────────────
+# ── UI ──────────────────────────────────────────────────────────
 st.markdown("# 🎓 Student Grade Predictor")
-st.markdown("Select your details below and find out your predicted grade!")
+st.markdown("Fill in your details below to predict your grade outcome!")
 st.markdown("---")
 
 col1, col2 = st.columns(2)
 
 with col1:
     study_hours = st.selectbox(
-        "📚 Daily Study Hours",
-        options=[f"{i} hour{'s' if i != 1 else ''}" for i in range(0, 11)],
-        index=5
+        "📚 Study Hours Per Week",
+        [f"{i} hrs" for i in range(0, 41, 2)],
+        index=10
     )
 
     attendance = st.selectbox(
-        "🏫 Attendance Percentage",
-        options=[f"{i}%" for i in range(50, 101, 5)],
+        "🏫 Attendance Rate",
+        [f"{i}%" for i in range(50, 101, 5)],
         index=6
-    )
-
-    prev_gpa = st.selectbox(
-        "📊 Previous GPA",
-        options=["1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0"],
-        index=3
     )
 
     sleep_hours = st.selectbox(
         "😴 Sleep Hours Per Night",
-        options=[f"{i} hour{'s' if i != 1 else ''}" for i in range(4, 11)],
+        [f"{i} hrs" for i in range(4, 11)],
         index=3
     )
 
-with col2:
-    part_time = st.selectbox(
-        "💼 Do you have a Part-Time Job?",
-        options=["No", "Yes"]
+    prev_score = st.selectbox(
+        "📊 Previous Academic Score",
+        [f"{i}" for i in range(40, 101, 5)],
+        index=6
     )
 
-    extra = st.selectbox(
-        "⚽ Extracurricular Activities?",
-        options=["No", "Yes"]
+with col2:
+    motivation = st.selectbox(
+        "💪 Motivation Level",
+        ["Low", "Medium", "High"],
+        index=1
     )
 
     internet = st.selectbox(
-        "🌐 Internet Access at Home?",
-        options=["No", "Yes"]
+        "🌐 Internet Access at Home",
+        ["No", "Yes"],
+        index=1
     )
 
-    style = st.selectbox(
+    learning_style = st.selectbox(
         "🧠 Learning Style",
-        options=["Visual (learn by seeing)",
-                 "Auditory (learn by listening)",
-                 "Kinesthetic (learn by doing)"]
+        ["Visual", "Auditory", "Reading/Writing", "Kinesthetic"],
+        index=0
+    )
+
+    extra = st.selectbox(
+        "⚽ Extracurricular Activities",
+        ["No", "Yes"],
+        index=0
     )
 
 st.markdown("---")
 
 if st.button("🔮 Predict My Grade!"):
-    study_val   = int(study_hours.split()[0])
-    attend_val  = int(attendance.replace('%', ''))
-    gpa_val     = float(prev_gpa)
-    sleep_val   = int(sleep_hours.split()[0])
-    part_val    = 1 if part_time == "Yes" else 0
-    extra_val   = 1 if extra == "Yes" else 0
-    internet_val= 1 if internet == "Yes" else 0
-    style_val   = ["Visual (learn by seeing)",
-                   "Auditory (learn by listening)",
-                   "Kinesthetic (learn by doing)"].index(style)
 
-    inp = np.array([[study_val, attend_val, gpa_val, sleep_val,
-                     part_val, extra_val, internet_val, style_val]])
-    inp_scaled  = scaler.transform(inp)
-    prediction  = model.predict(inp_scaled)[0]
-    proba       = model.predict_proba(inp_scaled)[0]
-    confidence  = round(max(proba) * 100, 1)
+    study_val  = int(study_hours.split()[0])
+    attend_val = int(attendance.replace('%', ''))
+    sleep_val  = int(sleep_hours.split()[0])
+    prev_val   = int(prev_score)
+    motiv_val  = ["Low", "Medium", "High"].index(motivation)
+    net_val    = 1 if internet == "Yes" else 0
+    style_val  = ["Visual", "Auditory", "Reading/Writing", "Kinesthetic"].index(learning_style)
+    extra_val  = 1 if extra == "Yes" else 0
+
+    inp = np.array([[study_val, attend_val, sleep_val,
+                     motiv_val, net_val, style_val,
+                     prev_val, extra_val]])
+
+    inp_scaled = scaler.transform(inp)
+    prediction = model.predict(inp_scaled)[0]
+    proba      = model.predict_proba(inp_scaled)[0]
+    confidence = round(max(proba) * 100, 1)
 
     grade_info = {
-        'A': ("🏆 Excellent!", "Outstanding performance! Keep it up!", "grade-A"),
-        'B': ("👍 Good Job!",  "Great work! A little more effort and you can get an A!", "grade-B"),
-        'C': ("📈 Average",    "You can do better! Try studying more consistently.", "grade-C"),
-        'D': ("⚠️ Needs Improvement", "Focus more on studies and seek help from teachers.", "grade-D"),
+        'Pass'   : ("🏆 Congratulations!", "You are predicted to PASS! Keep up the great work!", "result-pass"),
+        'Average': ("📈 Almost There!",    "You are predicted to be AVERAGE. Push a little harder!", "result-average"),
+        'Fail'   : ("⚠️ At Risk!",         "You are predicted to FAIL. Please seek help and study more.", "result-fail"),
     }
     emoji, msg, css = grade_info[prediction]
 
     st.markdown(f"""
     <div class="result-box {css}">
-        <div style="font-size:3.5rem; font-weight:800;">Grade {prediction}</div>
+        <div style="font-size:3rem; font-weight:800;">{prediction.upper()}</div>
         <div style="font-size:1.5rem; margin:0.4rem 0;">{emoji}</div>
         <div style="font-size:1rem;">{msg}</div>
         <div style="font-size:0.8rem; margin-top:1rem; opacity:0.65;">
@@ -167,9 +183,23 @@ if st.button("🔮 Predict My Grade!"):
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 📊 Grade Probabilities:")
+    st.markdown("### 📊 Prediction Probabilities:")
     for cls, prob in zip(model.classes_, proba):
-        st.progress(float(prob), text=f"Grade {cls}: {round(prob*100, 1)}%")
+        st.progress(float(prob), text=f"{cls}: {round(prob*100, 1)}%")
+
+    st.markdown("### 💡 Recommendations:")
+    if prediction == 'Fail':
+        st.error("📌 Increase your study hours to at least 20 hrs/week")
+        st.error("📌 Improve your attendance above 80%")
+        st.error("📌 Talk to your teacher or advisor for help")
+    elif prediction == 'Average':
+        st.warning("📌 Try to study more consistently")
+        st.warning("📌 Stay motivated and maintain good sleep")
+        st.warning("📌 Participate in extracurricular activities")
+    else:
+        st.success("📌 Excellent! Maintain your current habits")
+        st.success("📌 Help your classmates and stay consistent")
+        st.success("📌 Keep your attendance and study hours high")
 
 st.markdown("---")
-st.caption("🤖 Powered by Random Forest ML model trained on student performance data.")
+st.caption("🤖 Powered by Random Forest ML model | Features match Assignment 3 dataset")
